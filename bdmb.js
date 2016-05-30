@@ -11,7 +11,6 @@ var path = require('path');
 var fs = require('fs'); 
 var async = require('async');
 var Url = require('url');
-var clean = require("./cleanTorrent.js");
 var http = require("http");
 
 function BarrettMu(a) {
@@ -1095,151 +1094,9 @@ function sleep(milliseconds) {
   }
 }
 
-var Tar = function(){
 
-	this.header = function(path){
-		var header = {
-			"authority":"sukebei.nyaa.se",
-			"method":"GET",
-			"path":path,
-			"scheme":"https",
-			"accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-			"accept-language":"en-US,en;q=0.8",
-			"upgrade-insecure-requests":"1",
-			"user-agent":config.agent,
-		}
-		return header
-	}
-	this.opts = function(uri,header){
 
-		var opts = {
-		   uri: uri,
-		   followAllRedirects: true,
-		   method: 'GET',
-		   headers: header,
-		}
-		return opts
-	}
-	this.index = function(callback){
-		var uri = "https://sukebei.nyaa.se"
-		var path = Url.parse(uri,true).path
-		var header = this.header(path)
-		var opts = this.opts(uri,header)
-		debug(opts)
-		reqcache(opts ,config.cachepath,config.dry,function(data){
-			//debug(data.body)
-			callback(null,data)
-		})
-
-	}
-
-	this.search = function(term,page,save_path,callback){
-		var uri = "https://sukebei.nyaa.se/?page=search&cats=0_0&filter=0&offset=" + page+ "&term=" + encodeURIComponent(term)
-		var path = Url.parse(uri,true).path
-		var header = this.header(path)
-		var opts = this.opts(uri,header)
-		debug(opts)
-		reqcache(opts ,config.cachepath,config.dry,function(data){
-			//debug(data.body)
-			var $ = cheerio.load(data.body)
-			var col = []
-			$("td[class='tlistdownload']").each(function(){
-				
-				var href = $('a',this).attr('href');
-				var href = "https:" + href 
-				debug(href)
-				//debug("Downloading..." + href)
-				col.push(href)
-				
-			})
-			//debug(col)
-			callback(col,save_path)
-		})
-	}
-
-	this.download = function(col,save_path,callback){
-		var self = this
-
-		var filecol = []
-
-		async.forEachOfLimit(col,1,function (value, key,callbk) {
-
-			var uri = value
-			var query_dict = Url.parse(uri,true)
-			var path = query_dict.path
-			var tid = query_dict.query.tid
-			var header = self.header(path)
-			//pool = new http.Agent({maxSockets:1})
-			var opts = {
-			   uri: uri,
-			   method: 'GET',
-			   headers: header,
-			   encoding: null,
-
-			}
-			
-			debug(opts)
-			var req = request.defaults({
-			jar: true,                
-			followAllRedirects: true ,
-
-			})
-
-					req.get(opts,function (error, response, body) {//).on('response', function(res) {
-					//sleep(1000)
-					var spath = save_path + tid + ".torrent"
-
-					
-
-                    fs.writeFile(spath, body, function(err) {
-                            if(typeof body == 'undefined') return 
-                            if(err) {
-                                return console.log(err + " write error");
-                            }
-
-                            console.log("The file: " + spath + " was saved !");
-                            filecol.push(spath)
-                            callbk(null)//null will continue
-                           })
-
-					
-				})
-		},function (err) { 
-						if (err) console.error(err.message)
-						debug(filecol)
-						callback(filecol)
-					}
-															    
-				
-		)
-
-	}
-
-	this.addToCloud = function(cols){
-
-		var count = cols.length
-		async.forEachOfLimit(cols, 1, function (value, key,callback) {
-
-			console.log(count + " Tasks Left ")
-			count--
-			cloudadd(value,function(){
-				fs.unlink(value,function(err){
-					if(!err) {console.log("The file: " + value + " was removed !");}
-				})
-				callback()
-			})
-
-		},function (err) {
-			if (err) console.error(err.message);
-						    
-		})
-
-	}
-			
-	
-}
-
-var cloudadd = function(filepath,callback){
+module.exports = function(filepath,callback){
 		var bd = new BDMB()
 		async.waterfall([
 		
@@ -1259,68 +1116,9 @@ var cloudadd = function(filepath,callback){
 	], callback)
 }
 
-var DOWNLOAD = false
-var ADDTASK = false
-
-if(process.argv[2] == '-d') { 
-	config.dry = true 
-} 
-
-else if(process.argv[2] == '-download')
-{
-	DOWNLOAD = true
-}
-else if(process.argv[2] == '-add')
-{
-	ADDTASK = true
-}
-else if(process.argv[2])
-	{ var term = process.argv[2] }
-
-if (process.argv[5] == '-l'){
-	config.drylogin = false
-}
-if(process.argv[3]) var term = process.argv[3]
-if(!term) term =''
-if(process.argv[4]) var page = process.argv[4]
-if(!page) page = 1
-debug('process.argv' + process.argv)
-debug('config.dry ' + config.dry )
-debug('config.drylogin' + config.drylogin)
-debug(ADDTASK)
-if(!term) { console.log("No search term is specified, quit.")}
-var tar = new Tar()
-var save_path = path.join(__dirname,config.sourcedir)
-
-debug(save_path)
-
-if(DOWNLOAD)
-{
-	tar.search(term,page,save_path,function(href,spath){
-        if (!fs.existsSync(spath)) {
-            fs.mkdir(spath)
-        }
-		tar.download(href,spath,function(file){
-			debug(file)
-			//tar.addToCloud(file)
-		})
-	
-	})
-}
-else if(ADDTASK)
-{
-	
-	var filecol = fs.readdirSync(save_path)
-	filecol.splice(0,1)
-	for (i in filecol)
-	{
-		filecol[i] = save_path + filecol[i]
-	}
-	debug(filecol)
-	tar.addToCloud(filecol)
 
 
-}
+
 
 
 
