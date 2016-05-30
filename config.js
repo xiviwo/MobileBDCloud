@@ -15,5 +15,9 @@ config.cuid = '02EBA105673EC7EEBD1391FA8836AC4A%257C825651220575768'
 config.cloudspath = "/west/"
 config.sourcedir = "/New/"
 config.drylogin = true
+config.channel = 'android_5.1_m2_bd-netdisk_1523a'
+config.cver = '7.11.5'
+config.magent = "netdisk;" +  config.cver + ";m2;android-android;5.1"
+
 
 module.exports = config;

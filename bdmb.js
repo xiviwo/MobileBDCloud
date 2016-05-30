@@ -757,22 +757,19 @@ BDMB.prototype.login = function(data,callback){
 
 BDMB.prototype.api_list = function(data,callback){
 		var self = this
-		
-		debug(rand(tt(),me.bduss,me.uid))
+
 	}
 
 BDMB.prototype.locateupload = function(callback){	
 		debug('----------------------locateupload--------------------------------')	
 		var self = this
 		var tm = tt()	
-		var url = "http://pcs.baidu.com/rest/2.0/pcs/file?method=locateupload&app_id=250528&devuid=" + config.DEVUID + "&devuid=" + config.DEVUID + "&clienttype=1&channel=android_5.1_m2_bd-netdisk_1523a&version=7.11.5&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&cuid=" + config.cuid + "&network_type=wifi&bdstoken=" + self.bdstoken
-
-
+		var url = "http://pcs.baidu.com/rest/2.0/pcs/file?method=locateupload&app_id=250528&devuid=" + config.DEVUID + "&devuid=" + config.DEVUID + "&clienttype=1&channel=" + config.channel + "&version=" + config.cver + "&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&cuid=" + config.cuid + "&network_type=wifi&bdstoken=" + self.bdstoken
 
 
 		var header = { 
 				"Host":"pcs.baidu.com",
-			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
+			    "User-Agent":config.magent,
 			    "Connection":"keep-alive"
 				}
 		var opts = {
@@ -780,7 +777,7 @@ BDMB.prototype.locateupload = function(callback){
 		   followAllRedirects: true,
 		   method: 'GET',
 		   headers: header,
-		  //jar: true
+
 		}
 		debug(opts)
 		reqcache(opts ,config.cachepath,config.dry,function(data){
@@ -804,11 +801,10 @@ BDMB.prototype.upload = function(filepath,host,callback){
 		var dir = config.cloudspath + filename
 		var encdir = encodeURIComponent(dir)
 		var size = getFilesizeInBytes(filepath)
-		//debug(me)
 		var tm = tt()
 		var header = { 
 				"Host":host,
-			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
+			    "User-Agent":config.magent,
 			    "Connection":"keep-alive",
 				"Content-Type": "multipart/form-data; boundary=--" + tm,
 				"Content-Transfer-Encoding": "binary"
@@ -851,7 +847,7 @@ BDMB.prototype.create = function(block_list,filename,size,callback){
 		var tm = tt()
 		var header = { 
 				"Host":"pan.baidu.com",
-			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
+			    "User-Agent":config.magent,
 			    "Connection":"keep-alive"
 				//'Referer': self.referer,
 				}
@@ -868,7 +864,7 @@ BDMB.prototype.create = function(block_list,filename,size,callback){
 		}
 		var opts = {
 			
-		   uri: "http://pan.baidu.com/api/create?clienttype=1&devuid=" + config.DEVUID + "&channel=android_5.1_m2_bd-netdisk_1523a&version=7.11.5&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
+		   uri: "http://pan.baidu.com/api/create?clienttype=1&devuid=" + config.DEVUID + "&channel=" + config.channel + "&version=" + config.cver + "&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
 		   followAllRedirects: true,
 		   method: 'POST',
 		   headers: header,
@@ -892,7 +888,7 @@ BDMB.prototype.query_sinfo = function(filename,callback){
 		var tm = tt()
 		var header = { 
 				"Host":"pan.baidu.com",
-			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
+			    "User-Agent":config.magent,
 			    "Connection":"keep-alive"
 				//'Referer': self.referer,
 				}
@@ -906,7 +902,7 @@ BDMB.prototype.query_sinfo = function(filename,callback){
 
 		}
 		var opts = {
-		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=android_5.1_m2_bd-netdisk_1523a&version=7.11.5&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
+		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=" + config.channel + "&version=" + config.cver + "&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
 		   followAllRedirects: true,
 		   method: 'POST',
 		   headers: header,
@@ -954,7 +950,7 @@ BDMB.prototype.add_task = function(sha1,idx,filename,callback){
 		var tm = tt()
 		var header = { 
 				"Host":"pan.baidu.com",
-			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
+			    "User-Agent":config.magent,
 			    "Connection":"keep-alive"
 				//'Referer': self.referer,
 				}
@@ -976,7 +972,7 @@ BDMB.prototype.add_task = function(sha1,idx,filename,callback){
 
 		}
 		var opts = {
-		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=android_5.1_m2_bd-netdisk_1523a&version=7.11.5&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
+		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=" + config.channel + "&version=" + config.cver + "&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
 		   followAllRedirects: true,
 		   method: 'POST',
 		   headers: header,
@@ -1006,7 +1002,7 @@ BDMB.prototype.query_task = function(task_id,callback){
 		var tm = tt()
 		var header = { 
 				"Host":"pan.baidu.com",
-			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
+			    "User-Agent":config.magent,
 			    "Connection":"keep-alive"
 				//'Referer': self.referer,
 				}
@@ -1020,7 +1016,7 @@ BDMB.prototype.query_task = function(task_id,callback){
 
 		}
 		var opts = {
-		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=android_5.1_m2_bd-netdisk_1523a&version=7.11.5&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
+		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=" + config.channel + "&version=" + config.cver + "&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
 		   followAllRedirects: true,
 		   method: 'POST',
 		   headers: header,
@@ -1054,7 +1050,7 @@ BDMB.prototype.cancel_task = function(task_id,rapid_download,callback){
 		var tm = tt()
 		var header = { 
 				"Host":"pan.baidu.com",
-			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
+			    "User-Agent":config.magent,
 			    "Connection":"keep-alive"
 				//'Referer': self.referer,
 				}
@@ -1068,7 +1064,7 @@ BDMB.prototype.cancel_task = function(task_id,rapid_download,callback){
 		}
 		var opts = {
 
-		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=android_5.1_m2_bd-netdisk_1523a&version=7.11.5&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
+		   uri: "http://pan.baidu.com/rest/2.0/services/cloud_dl?clienttype=1&devuid=" + config.DEVUID + "&channel=" + config.channel + "&version=" + config.cver + "&logid=" + logid(tm) + "&rand=" + rand(tm,self.bduss,self.uid) +  "&time=" + tm +"&rtype=2&network_type=wifi&cuid=" + config.cuid ,
 		   followAllRedirects: true,
 		   method: 'POST',
 		   headers: header,
@@ -1103,7 +1099,6 @@ module.exports = function(filepath,callback){
 	    bd.index.bind(bd),
 	    bd.login.bind(bd),
 	    bd.locateupload.bind(bd),
-	    //bd.upload.bind(bd),
 	    bd.upload.bind(bd).bind(null,filepath),
 	    
 	    bd.create.bind(bd),
