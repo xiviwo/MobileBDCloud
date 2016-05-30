@@ -651,7 +651,7 @@ clientfrom=native&tpl=netdisk&login_share_strategy=choice\
 		   headers: header,
 		}
 		//me.referer = opts.uri
-	    reqcache(opts ,config.cachepath,true,function(data){
+	    reqcache(opts ,config.cachepath,config.drylogin,function(data){
 	    	callback(null,data)
 	    })
 		
@@ -722,7 +722,6 @@ BDMB.prototype.login = function(data,callback){
 		   method: 'POST',
 		   headers: header,
 		   form: data,
-		  //jar: true
 		}
 		debug(opts)
 
@@ -744,13 +743,14 @@ BDMB.prototype.login = function(data,callback){
 
 		}
 		
-	    reqcache(opts ,config.cachepath,true,function(data){
+	    reqcache(opts ,config.cachepath,config.drylogin,function(data){
 	    	var loginjson = JSON.parse(data.body)
 			//debug(loginjson)
 			var logindata = loginjson.data
 			debug(logindata)
 			getAuthData(logindata)
 			//debug(self)
+			config.drylogin = true
 	    	callback(null)
 	    })
 
@@ -775,7 +775,6 @@ BDMB.prototype.locateupload = function(callback){
 				"Host":"pcs.baidu.com",
 			    "User-Agent":"netdisk;7.11.5;m2;android-android;5.1",
 			    "Connection":"keep-alive"
-				//'Referer': self.referer,
 				}
 		var opts = {
 		   uri: url,	   
@@ -797,7 +796,7 @@ BDMB.prototype.locateupload = function(callback){
 	}
 
 BDMB.prototype.upload = function(filepath,host,callback){
-		if(!host) {console.log("locateUpload failed, skip ");callback(true);}
+		if(!host) {console.log("locateUpload failed, skip ");callback(true);return}
 		debug('----------------------upload--------------------------------')
 		var self = this
 		debug(filepath)
@@ -816,9 +815,6 @@ BDMB.prototype.upload = function(filepath,host,callback){
 				"Content-Transfer-Encoding": "binary"
 				}
 		var formData = {
-		  // Pass optional meta-data with an 'options' object with style: {value: DATA, options: OPTIONS}
-		  // Use case: for some types of streams, you'll need to provide "file"-related information manually.
-		  // See the `form-data` README for more information about options: https://github.com/form-data/form-data
 		  custom_file: {
 		    value:  fs.createReadStream(filepath),
 		    options: {
@@ -842,15 +838,15 @@ BDMB.prototype.upload = function(filepath,host,callback){
 			js = JSON.parse(data.body)
 			debug(js)
 			callback(null,js.md5,filename,size)
-			//me.create(js.md5,filename,size)
+
 		})
 
 		
 	}
 
 BDMB.prototype.create = function(block_list,filename,size,callback){
-		sleep(1000)
-		if(!block_list) {console.log("Upload failed, skip ");callback(true);}
+		sleep(500)
+		if(!block_list) {console.log("Upload failed, skip ");callback(true);return;}
 	    debug('----------------------create--------------------------------')
 		var self = this
 		var tm = tt()
@@ -890,8 +886,8 @@ BDMB.prototype.create = function(block_list,filename,size,callback){
 
 
 BDMB.prototype.query_sinfo = function(filename,callback){
-	sleep(1000)
-	if(!filename) {console.log("Create failed, skip ");callback(true);}
+	sleep(500)
+	if(!filename) {console.log("Create failed, skip ");callback(true);return}
 	debug('----------------------query_sinfo--------------------------------')
 		var self = this
 		var tm = tt()
@@ -926,30 +922,33 @@ BDMB.prototype.query_sinfo = function(filename,callback){
 			else { var body = data.body }
 
 			var tor = body.torrent_info
-			if(!tor) {console.log("File not uploaded, sikp");return;}
-			var sha1 = tor.sha1
-			var file_list = tor.file_info
-			var idx = 0
-			for( var index in file_list){ 
+			if(!tor) {console.log("File not parsed, skip");callback(true);}
+			else {
+				var sha1 = tor.sha1
+				var file_list = tor.file_info
+				var idx = 0
+				for( var index in file_list){ 
 
-				if( (file_list[index].size/1024/1024) > 100 ) 
-				{
-					idx = index
+					if( (file_list[index].size/1024/1024) > 100 ) 
+					{
+						idx = index
+					}
+
+
 				}
-
-
+				debug(sha1)
+				debug(parseInt(idx)+1)
+				callback(null,sha1,parseInt(idx)+1,filename)
 			}
-			debug(sha1)
-			debug(parseInt(idx)+1)
-			callback(null,sha1,parseInt(idx)+1,filename)
+
 		})
 
 
 	}
 
 BDMB.prototype.add_task = function(sha1,idx,filename,callback){
-	sleep(2000)
-	if(!sha1) {console.log("query_sinfo failed, skip ");callback(true);}
+	sleep(500)
+	if(!sha1) {console.log("query_sinfo failed, skip ");callback(true);return;}
 	debug('----------------------add_task--------------------------------')
 		if(!sha1 || !idx ) {console.log("File query failed, not proceeding. ")}
 		var self = this
@@ -987,9 +986,12 @@ BDMB.prototype.add_task = function(sha1,idx,filename,callback){
 		debug(opts)
 		reqcache(opts ,config.cachepath,config.dry,function(data){
 			debug(data.body)
-			var task_id = JSON.parse(data.body).task_id
+			taskjson = JSON.parse(data.body)
+			var task_id = taskjson.task_id
+			var rapid_download = taskjson.rapid_download
 			debug(task_id)
-			callback(null,task_id)
+			debug(rapid_download)
+			callback(null,task_id,rapid_download)
 		})
 
 
@@ -997,10 +999,10 @@ BDMB.prototype.add_task = function(sha1,idx,filename,callback){
 
 
 BDMB.prototype.query_task = function(task_id,callback){
-	if(!task_id) {console.log("add_task failed, skip ");callback(true);}
+	sleep(1000)
+	if(!task_id) {console.log("add_task failed, skip ");callback(true);return;}
 	debug('----------------------query_task --------------------------------')
 		debug(task_id)
-		if(!task_id) {console.log("Task_id is null, skip ");return ;}
 		var self = this
 		var tm = tt()
 		var header = { 
@@ -1035,15 +1037,21 @@ BDMB.prototype.query_task = function(task_id,callback){
 
 	}
 
-BDMB.prototype.cancel_task = function(data,task_id,callback){
+BDMB.prototype.cancel_task = function(task_id,rapid_download,callback){
+	sleep(1000)
 	debug('----------------------cancel_task --------------------------------')
-		if(!task_id) {console.log("query_task is null, skip ");callback(true) ;}
+		if(!task_id) {console.log("add_task failed, skip ");callback(true) ;return;}
 		var self = this
-		taskdata = JSON.parse(data)
-		debug(taskdata.task_info)
-		var taskinfo = taskdata.task_info[task_id.toString()]
-		debug(taskinfo)
-		if (taskinfo.finished_size != "0") {console.log("Download in progress,not canceling."); callback(true);}
+		// taskdata = JSON.parse(data)
+		// debug(taskdata.task_info)
+		// var taskinfo = taskdata.task_info[task_id.toString()]
+		// debug(taskinfo)
+		// debug(taskinfo.finished_size)
+
+		if (rapid_download == 1) 
+			{console.log("Download in progress,not canceling."); callback(true);return;}
+
+
 		var tm = tt()
 		var header = { 
 				"Host":"pan.baidu.com",
@@ -1072,6 +1080,8 @@ BDMB.prototype.cancel_task = function(data,task_id,callback){
 			debug(data.body)
 			callback(null,data)
 		})
+		
+	
 
 
 }
@@ -1123,8 +1133,8 @@ var Tar = function(){
 
 	}
 
-	this.search = function(term,save_path,callback){
-		var uri = "https://sukebei.nyaa.se/?page=search&cats=0_0&filter=0&offset=4&term=" + term
+	this.search = function(term,page,save_path,callback){
+		var uri = "https://sukebei.nyaa.se/?page=search&cats=0_0&filter=0&offset=" + page+ "&term=" + encodeURIComponent(term)
 		var path = Url.parse(uri,true).path
 		var header = this.header(path)
 		var opts = this.opts(uri,header)
@@ -1189,8 +1199,9 @@ var Tar = function(){
 
                             console.log("The file: " + spath + " was saved !");
                             filecol.push(spath)
-                            callbk(true)
+                            callbk(null)//null will continue
                            })
+
 					
 				})
 		},function (err) { 
@@ -1206,9 +1217,11 @@ var Tar = function(){
 
 	this.addToCloud = function(cols){
 
+		var count = cols.length
 		async.forEachOfLimit(cols, 1, function (value, key,callback) {
 
-
+			console.log(count + " Tasks Left ")
+			count--
 			cloudadd(value,function(){
 				fs.unlink(value,function(err){
 					if(!err) {console.log("The file: " + value + " was removed !");}
@@ -1240,55 +1253,61 @@ var cloudadd = function(filepath,callback){
 	    bd.query_sinfo.bind(bd),
 	    
 	    bd.add_task.bind(bd),
-	    bd.query_task.bind(bd),
+	    //bd.query_task.bind(bd),
 	    bd.cancel_task.bind(bd),
 
 	], callback)
 }
 
-var DOWADD = false
-var ADDONLY = false
+var DOWNLOAD = false
+var ADDTASK = false
 
-if(process.argv[2] == '-d') 
-	{ 
-		config.dry = true 
-	} 
-else if(process.argv[2] == '-da')
+if(process.argv[2] == '-d') { 
+	config.dry = true 
+} 
+
+else if(process.argv[2] == '-download')
 {
-	DOWADD = true
+	DOWNLOAD = true
 }
-else if(process.argv[2] == '-ao')
+else if(process.argv[2] == '-add')
 {
-	ADDONLY = true
+	ADDTASK = true
 }
 else if(process.argv[2])
 	{ var term = process.argv[2] }
 
+if (process.argv[5] == '-l'){
+	config.drylogin = false
+}
 if(process.argv[3]) var term = process.argv[3]
-
+if(!term) term =''
+if(process.argv[4]) var page = process.argv[4]
+if(!page) page = 1
 debug('process.argv' + process.argv)
 debug('config.dry ' + config.dry )
-
-
+debug('config.drylogin' + config.drylogin)
+debug(ADDTASK)
+if(!term) { console.log("No search term is specified, quit.")}
 var tar = new Tar()
 var save_path = path.join(__dirname,config.sourcedir)
 
 debug(save_path)
 
-if(DOWADD)
+if(DOWNLOAD)
 {
-	tar.search(term,save_path,function(href,spath){
+	tar.search(term,page,save_path,function(href,spath){
         if (!fs.existsSync(spath)) {
             fs.mkdir(spath)
         }
 		tar.download(href,spath,function(file){
 			debug(file)
-			tar.addToCloud(file)
+			//tar.addToCloud(file)
 		})
 	
 	})
 }
-else if(ADDONLY)
+else if(ADDTASK)
 {
 	
 	var filecol = fs.readdirSync(save_path)
